@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Configuration;
 using API.Home.Kelly.Models;
 using API.Home.Kelly.Models.UPCDModels;
+using EntityFrameworkCore.Data.Home.Kelly;
 using System.Net.Http;
 
 namespace API.Home.Kelly.Controllers
@@ -35,6 +36,103 @@ namespace API.Home.Kelly.Controllers
         }
         #endregion
 
+        #region Internal Call Methods
+        public static bool WriteNewItem(Item item)
+        {
+            try
+            {
+                using (Data_Home_KellyContext _context = new Data_Home_KellyContext())
+                {
+                    _context.Items.Add(item);
+                    _context.SaveChanges();
+                }
 
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public static bool UpdateItem(Item item, string location = null)
+        {
+            try
+            {
+                using(Data_Home_KellyContext _context =new Data_Home_KellyContext())
+                {
+                    Item? i = _context.Items
+                        .Where(i => i.Id == item.Id)
+                        .FirstOrDefault();
+
+                    if(i is not null)
+                    {
+                        if (location is not null)
+                        {
+                            i.Location = location;
+                        }
+                        _context.SaveChanges();
+                    }
+                    else
+                    {
+                        return false;                        
+                    }
+                }
+
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+        }
+        #endregion
+
+        #region Endpoints
+        [HttpGet("item/query")]
+        public ActionResult<UPCDReturn> GetItem(string barcode)
+        {
+            UPCDReturn product = GetProduct(barcode);
+
+            if (product.Success)
+            {
+                return Ok(product);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost("item/add")]
+        public ActionResult AddItem([FromBody] Item item)
+        {
+            bool success = WriteNewItem(item);
+
+            if (success)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPost("item/update")]
+        public ActionResult MoveItem([FromBody] Item item, string location)
+        {
+            bool success = UpdateItem(item, location);
+
+            if (success)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+        #endregion
     }
 }
