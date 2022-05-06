@@ -90,13 +90,26 @@ namespace API.Home.Kelly.Controllers
 
         #region Endpoints
         [HttpGet("item/query")]
-        public ActionResult<UPCDReturn> GetItem(string barcode)
+        public ActionResult<Item> GetItem([FromQuery] string barcode)
         {
             UPCDReturn product = GetProduct(barcode);
 
             if (product.Success)
             {
-                return Ok(product);
+                Item item = new Item()
+                {
+                    Barcode = product.Barcode,
+                    Title = product.Title,
+                    Alias = product.Alias,
+                    Description = product.Description,
+                    Brand = product.Brand,
+                    Manufacturer = product.Manufacturer,
+                    Mpn = ((int?)product.MPN),
+                    Msrp = ((int?)product.MSRP),
+                    Asin = product.ASIN,
+                    Category = product.Category,
+                };
+                return Ok(item);
             }
             else
             {
